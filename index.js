@@ -4,28 +4,32 @@ import cors from "cors";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-
+// Middleware
 app.use(cors());
+
+// Parse JSON bodies
 app.use(express.json());
 
+// Parse URL-encoded bodies (for forms)
+app.use(express.urlencoded({ extended: true }));
 
+// Debug raw data if needed
 app.use((req, res, next) => {
-  let rawData = '';
-  req.on('data', chunk => { rawData += chunk.toString(); });
-  req.on('end', () => {
-    if (rawData) console.log('Raw data received:', rawData);
+  let rawData = "";
+  req.on("data", chunk => { rawData += chunk.toString(); });
+  req.on("end", () => {
+    if (rawData) console.log("Raw data received:", rawData);
     next();
   });
 });
 
-
 // Constants
 const FULL_NAME = "john_doe";
-const DOB = "17091999"; 
+const DOB = "17091999";
 const EMAIL = "john@xyz.com";
 const ROLL_NUMBER = "ABCD123";
 
-// Helper functions
+// Helpers
 function isNumber(str) {
   return !isNaN(str) && str.trim() !== "";
 }
@@ -43,16 +47,16 @@ function alternatingCaps(str) {
 // Routes
 app.post("/bfhl", (req, res) => {
   try {
-    console.log("👉 Parsed body:", req.body);
+    console.log("Parsed body:", req.body);
 
-    if (!req.body || !req.body.data || !Array.isArray(req.body.data)) {
+    // Accept JSON, URL-encoded, or raw form data
+    const data = req.body.data || req.body["data[]"];
+    if (!data || !Array.isArray(data)) {
       return res.status(400).json({
         is_success: false,
         message: 'Request body missing or invalid. Send JSON like {"data": ["1","2","a","@","3"]}'
       });
     }
-
-    const data = req.body.data;
 
     let even_numbers = [];
     let odd_numbers = [];
@@ -77,7 +81,7 @@ app.post("/bfhl", (req, res) => {
     const reversed = allAlphabets.split("").reverse().join("");
     const concat_string = alternatingCaps(reversed);
 
-    res.status(200).json({
+    return res.status(200).json({
       is_success: true,
       user_id: `${FULL_NAME}_${DOB}`,
       email: EMAIL,
@@ -92,7 +96,7 @@ app.post("/bfhl", (req, res) => {
 
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).json({ is_success: false, message: "Server error" });
+    return res.status(500).json({ is_success: false, message: "Server error" });
   }
 });
 
