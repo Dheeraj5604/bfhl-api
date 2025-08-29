@@ -8,13 +8,29 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json()); // parses application/json
 
+// Fallback middleware to log raw body if JSON parsing fails
+app.use((req, res, next) => {
+  if (!req.body || Object.keys(req.body).length === 0) {
+    let rawData = '';
+    req.on('data', chunk => {
+      rawData += chunk.toString();
+    });
+    req.on('end', () => {
+      if (rawData) console.log('Raw data received:', rawData);
+      next();
+    });
+  } else {
+    next();
+  }
+});
+
 // Constants
 const FULL_NAME = "john_doe";
 const DOB = "17091999"; 
 const EMAIL = "john@xyz.com";
 const ROLL_NUMBER = "ABCD123";
 
-// Helpers
+// Helper functions
 function isNumber(str) {
   return !isNaN(str) && str.trim() !== "";
 }
@@ -32,19 +48,17 @@ function alternatingCaps(str) {
 // Routes
 app.post("/bfhl", (req, res) => {
   try {
-    console.log("👉 Raw body:", req.body);
+    console.log("👉 Parsed body:", req.body);
 
-    // Safe check for body
     if (!req.body || !req.body.data || !Array.isArray(req.body.data)) {
       return res.status(400).json({
         is_success: false,
-        message: "Request body missing or invalid. Send JSON like {\"data\": [\"1\",\"2\",\"a\",\"@\",\"3\"]}"
+        message: 'Request body missing or invalid. Send JSON like {"data": ["1","2","a","@","3"]}'
       });
     }
 
     const data = req.body.data;
 
-    // Initialize arrays
     let even_numbers = [];
     let odd_numbers = [];
     let alphabets = [];
@@ -68,7 +82,6 @@ app.post("/bfhl", (req, res) => {
     const reversed = allAlphabets.split("").reverse().join("");
     const concat_string = alternatingCaps(reversed);
 
-    // Send response
     res.status(200).json({
       is_success: true,
       user_id: `${FULL_NAME}_${DOB}`,
